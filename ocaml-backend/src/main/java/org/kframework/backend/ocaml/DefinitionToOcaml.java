@@ -34,6 +34,7 @@ import org.kframework.definition.Production;
 import org.kframework.definition.Rule;
 import org.kframework.definition.Sentence;
 import org.kframework.kil.Attribute;
+import org.kframework.kil.loader.Context;
 import org.kframework.kompile.CompiledDefinition;
 import org.kframework.kompile.Kompile;
 import org.kframework.kompile.KompileOptions;
@@ -252,6 +253,7 @@ public class DefinitionToOcaml implements Serializable {
                                             ModuleTransformer.fromSentenceTransformer(new SplitThreadsCell(def.executionModule())::convert, "split threads cell into thread local and global") :
                                             ModuleTransformer.fromSentenceTransformer(s -> s, "identity function -- no transformation");
         ModuleTransformer preprocessKLabelPredicates = ModuleTransformer.fromSentenceTransformer(new PreprocessKLabelPredicates(def.executionModule())::convert, "preprocess klabel predicates");
+        ModuleTransformer removePolyKLabels = ModuleTransformer.fromSentenceTransformer(Kompile::removePolyKLabels, "remove poly klabels");
         Sentence thread = Production(KLabel("#Thread"), Sorts.KItem(), Seq(
                 Terminal("#Thread"), Terminal("("),
                 NonTerminal(Sorts.K()), Terminal(","),
@@ -260,7 +262,8 @@ public class DefinitionToOcaml implements Serializable {
                 NonTerminal(Sorts.K()), Terminal(")")));
         Sentence bottom = Production(KLabel("#Bottom"), Sorts.KItem(), Seq(Terminal("#Bottom")));
         Sentence threadLocal = Production(KLabel("#ThreadLocal"), Sorts.KItem(), Seq(Terminal("#ThreadLocal")));
-        Function1<Module, Module> pipeline = preprocessKLabelPredicates
+        Function1<Module, Module> pipeline = removePolyKLabels
+                .andThen(preprocessKLabelPredicates)
                 .andThen(splitThreadCell)
                 .andThen(mod -> Module(mod.name(), mod.imports(),
                         Stream.concat(stream(mod.localSentences()),
@@ -1093,6 +1096,7 @@ public class DefinitionToOcaml implements Serializable {
         lookupDirectories.add(Kompile.BUILTIN_DIRECTORY);
         java.util.Set<Module> mods = new ParserUtils(files::resolveWorkingDirectory, kem, globalOptions).loadModules(
                 new HashSet<>(),
+                new Context(),
                 "require " + StringUtil.enquoteCString(definitionFile.getPath()),
                 Source.apply(definitionFile.getAbsolutePath()),
                 definitionFile.getParentFile(),

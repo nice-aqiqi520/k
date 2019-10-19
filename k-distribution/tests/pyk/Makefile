@@ -21,12 +21,12 @@ clean:
 imp_kompiled:=imp-kompiled/compiled.txt
 
 $(imp_kompiled): imp.k $(KOMPILE)
-	$(KOMPILE) --backend $(KOMPILE_BACKEND) -I . $<
+	$(KOMPILE) --backend $(KOMPILE_BACKEND) -I . $< --emit-json
 
-kast-tests/%.gen: build-config.py kast-tests/%.json
+kast-tests/%.gen: build-config.py kast-tests/%.json $(imp_kompiled)
 	python3 $^ > $@
 
-proof-tests/%-spec.k: build-config.py proof-tests/%-spec.json
+proof-tests/%-spec.k: build-config.py proof-tests/%-spec.json $(imp_kompiled)
 	python3 $^ > $@
 
 pyk_kast_tests = $(wildcard kast-tests/*.json)

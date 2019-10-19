@@ -338,7 +338,6 @@ module BOOL
   rule false xorBool B:Bool => B:Bool
   rule B:Bool xorBool false => B:Bool
   rule B:Bool xorBool B:Bool => false
-  rule B1:Bool xorBool B2:Bool => notBool (B1 ==Bool B2)
 
   rule true orBool _:Bool => true
   rule _:Bool orBool true => true
@@ -420,7 +419,7 @@ module INT-SYMBOLIC [symbolic, kore]
   imports ML-SYNTAX
 
   /**
-   * Definability conditions for _/Int_ and _%Int_
+   * Definability conditions
    */
 
   rule
@@ -428,10 +427,29 @@ module INT-SYMBOLIC [symbolic, kore]
   =>
     {(@I2 =/=Int 0) #Equals true} #And #Ceil(@I1) #And #Ceil(@I2)
   [anywhere]
+
   rule
     #Ceil(@I1:Int %Int @I2:Int)
   =>
     {(@I2 =/=Int 0) #Equals true} #And #Ceil(@I1) #And #Ceil(@I2)
+  [anywhere]
+
+  rule
+    #Ceil(@I1:Int modInt @I2:Int)
+  =>
+    {(@I2 =/=Int 0) #Equals true} #And #Ceil(@I1) #And #Ceil(@I2)
+  [anywhere]
+
+  rule
+    #Ceil(@I1:Int >>Int @I2:Int)
+  =>
+    {(@I2 >=Int 0) #Equals true} #And #Ceil(@I1) #And #Ceil(@I2)
+  [anywhere]
+
+  rule
+    #Ceil(@I1:Int <<Int @I2:Int)
+  =>
+    {(@I2 >=Int 0) #Equals true} #And #Ceil(@I1) #And #Ceil(@I2)
   [anywhere]
 endmodule
 
@@ -822,25 +840,12 @@ module K-EQUAL
                   K "==K" K           [function, functional, smt-hook(=), hook(KEQUAL.eq), klabel(_==K_), symbol, latex({#1}\mathrel{=_K}{#2}), equalEqualK]
                 | K "=/=K" K          [function, functional, smt-hook(distinct), hook(KEQUAL.ne), klabel(_=/=K_), symbol, latex({#1}\mathrel{\neq_K}{#2}), notEqualEqualK]
 
-  /*@ Set membership over terms. In addition to equality over
-      concrete patterns, K also supports computing equality
-      between a concrete pattern and a symbolic pattern.
-      This is compiled efficiently down to pattern matching,
-      and can be used by putting a term with unbound variables
-      in the left child of :=K or =/=K. Note that this does not
-      bind variables used on the lhs however (although this may
-      change in the future).*/
-
-  syntax Bool ::= left:
-                  K ":=K" K           [function, functional, klabel(_:=K_), symbol, equalEqualK]
-                | K ":/=K" K          [function, functional, klabel(_:/=K_), symbol, notEqualEqualK]
-
   syntax priorities equalEqualK notEqualEqualK > boolOperation mlOp
   rule K1:K =/=K K2:K => notBool (K1 ==K K2)
 
   rule K1:Bool ==Bool K2:Bool => K1 ==K K2
 
-  syntax K ::= "#if" Bool "#then" K "#else" K "#fi"   [function, functional, smt-hook(ite), hook(KEQUAL.ite), poly(0, 2, 3)]
+  syntax {Sort} Sort ::= "#if" Bool "#then" Sort "#else" Sort "#fi"   [function, functional, smt-hook(ite), hook(KEQUAL.ite)]
 
   rule #if C:Bool #then B1::K #else _ #fi => B1 requires C
   rule #if C:Bool #then _ #else B2::K #fi => B2 requires notBool C
@@ -864,7 +869,8 @@ module K-REFLECTION
   syntax List ::= #argv() [function, hook(KREFLECTION.argv)]
 
   // Takes as input a string and returns a K term
-  syntax KItem ::= #parseKAST(String) [function, hook(KREFLECTION.parseKAST), poly(0)]
+  syntax {Sort} Sort ::= #parseKORE(String) [function, hook(KREFLECTION.parseKORE)]
+  syntax {Sort} Sort ::= #parseKAST(String) [function, hook(KREFLECTION.parseKAST)]
   syntax IOError ::= "#noParse" "(" String ")" [klabel(#noParse), symbol]
 
 endmodule
@@ -999,7 +1005,7 @@ module K-IO
   syntax KItem ::= #system ( String ) [function, hook(IO.system), impure]
                  | "#systemResult" "(" Int /* exit code */ "," String /* stdout */ "," String /* stderr */ ")" [klabel(#systemResult), symbol]
 
-  syntax K ::= #logToFile(String, String) [function, functional, hook(IO.log), impure, returnsUnit]
+  syntax K ::= #logToFile(String, String) [function, functional, hook(IO.log), impure, returnsUnit, symbol]
   // #make safe temp ( prefix:String, suffix:String):IOFile - creates a temporary file in the default system location
   syntax IOFile ::= #mkstemp(String, String) [function, hook(IO.mkstemp), impure]
   syntax IOFile ::= IOError
@@ -1007,12 +1013,6 @@ module K-IO
                   | "#tempFile" "(" String "," Int ")"
   // Remove a file or empty directory from the disk. Returns .K on success or an IOError on failure.
   syntax K ::= #remove(String) [function, functional, hook(IO.remove), impure]
-
-
-  syntax String ::= #projectString(IOString) [function]
-  rule #projectString(S:String) => S
-  syntax Int ::= #projectInt(IOInt) [function]
-  rule #projectInt(I:Int) => I
 endmodule
 
 // NOTE: DO NOT DIRECTLY IMPORT *-STREAM MODULES
@@ -1034,7 +1034,7 @@ module STDIN-STREAM
   rule [stdinGetc]:
        <stdin>
        ListItem(#parseInput(_:String, Delimiters:String))
-       ListItem(#buffer(S:String => S +String chrChar(#projectInt(#getc(N)))))
+       ListItem(#buffer(S:String => S +String chrChar({#getc(N)}:>Int)))
        ListItem("on")
        ListItem(#istream(N:Int))
        </stdin>

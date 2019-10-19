@@ -244,7 +244,7 @@ public class ResolveFreshConstants {
                 RuleGrammarGenerator gen = new RuleGrammarGenerator(def);
                 ParseInModule mod = RuleGrammarGenerator.getCombinedGrammar(gen.getConfigGrammar(m), true);
                 ConfigurationInfoFromModule configInfo = new ConfigurationInfoFromModule(m);
-                Sort topCellSort = configInfo.topCell();
+                Sort topCellSort = configInfo.getRootCell();
                 KLabel topCellLabel = configInfo.getCellLabel(topCellSort);
                 Production prod = m.productionsFor().apply(topCellLabel).head();
                 KToken cellName = KToken(prod.att().get("cellName"), Sort("#CellName"));
@@ -266,7 +266,7 @@ public class ResolveFreshConstants {
         if (sentences.equals(m.localSentences())) {
             return m;
         }
-        return new GenerateSortPredicateSyntax().gen(Module(m.name(), kore ? m.imports() : add(def.getModule("K-REFLECTION").get(), m.imports()), sentences, m.att()));
+        return Module(m.name(), kore ? m.imports() : add(def.getModule("K-REFLECTION").get(), m.imports()), sentences, m.att());
     }
 }
 
