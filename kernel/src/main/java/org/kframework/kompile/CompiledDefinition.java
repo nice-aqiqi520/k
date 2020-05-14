@@ -62,7 +62,7 @@ public class CompiledDefinition implements Serializable {
         this.kompileOptions = kompileOptions;
         this.parsedDefinition = parsedDefinition;
         this.kompiledDefinition = kompiledDefinition;
-        initializeConfigurationVariableDefaultSorts();
+        initializeConfigurationVariableDefaultSorts(files);
         this.programStartSymbol = configurationVariableDefaultSorts.getOrDefault("$PGM", Sorts.K());
         this.topCellInitializer = topCellInitializer;
         this.languageParsingModule = kompiledDefinition.getModule("LANGUAGE-PARSING").get();
@@ -91,7 +91,7 @@ public class CompiledDefinition implements Serializable {
         return Rule(IncompleteCellUtils.make(exitProd.klabel().get(), false, KApply(KLabel("#SemanticCastToInt"), KVariable("_")), false), BooleanUtils.TRUE, BooleanUtils.TRUE);
     }
 
-    private void initializeConfigurationVariableDefaultSorts() {
+    private void initializeConfigurationVariableDefaultSorts(FileUtil files) {
         // searching for #SemanticCastTo<Sort>(Map:lookup(_, #token(<VarName>, KConfigVar)))
         Collections.stream(parsedDefinition.mainModule().rules())
                 .forEach(r -> {
@@ -110,6 +110,7 @@ public class CompiledDefinition implements Serializable {
                                     if (t.sort().equals(Sorts.KConfigVar())) {
                                         Sort sort = Outer.parseSort(k.klabel().name().replace("#SemanticCastTo", ""));
                                         configurationVariableDefaultSorts.put(t.s(), sort);
+                                        files.saveToKompiled("sort_" + t.s().substring(1) + ".txt", sort.toString());
                                     }
                                 }
                             }
