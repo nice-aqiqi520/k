@@ -43,7 +43,7 @@ KOMPILE_BACKEND?=llvm
 # if not, default to .k to give error message
 SOURCE_EXT?=$(or $(and $(wildcard $(DEF).k), k), $(or $(and $(wildcard $(DEF).md), md), k))
 ifeq ($(KOMPILE_BACKEND),llvm)
-KRUN=$(abspath $(MAKEFILE_PATH)/../bin/kx)
+KRUN=$(abspath $(MAKEFILE_PATH)/../../bin/kx)
 endif
 
 CHECK=| diff -
