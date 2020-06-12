@@ -349,8 +349,10 @@ else
 fi
 
 if [ -f "$kompiledDir/interpreter" ]; then
+  set +e
   execute $cmdprefix "$kompiledDir/interpreter" "$input_file" "${depth:--1}" "$kore_output"
   result=$?
+  set -e
 else
   error 'Does not yet support Haskell backend.'
 fi
