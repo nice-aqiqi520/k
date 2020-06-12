@@ -325,7 +325,7 @@ else
     execute $parser "${!config_name}" > "$tempFile"
     configVars="$configVars -c $name $tempFile $sortName korefile"
   done
-  if [ "$(cat "$kompiledDir"/sort_IO.txt)" = "String" ]; then
+  if [ "$(cat "$kompiledDir"/sort_IO.txt 2>/dev/null)" = "String" ]; then
     if $io; then
       ioText=on
     else
@@ -333,7 +333,7 @@ else
     fi
     configVars="$configVars -c IO \dv{SortString{}}(\"$ioText\") String kore"
   fi
-  if [ "$(cat "$kompiledDir"/sort_STDIN.txt)" = "String" ]; then
+  if [ "$(cat "$kompiledDir"/sort_STDIN.txt 2>/dev/null)" = "String" ]; then
     if $io; then
       stdinText=
     else
