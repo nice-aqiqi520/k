@@ -339,11 +339,11 @@ else
     else
       unescaped=$(</dev/stdin)
       stdinText=$(awk 'BEGIN {for(n=0;n<256;n++)ord[sprintf("%c",n)]=n} {text = text $0 ORS} END {split(text, chars, ""); for (i=1; i<=length(text); i++) { if (chars[i] == "\"") { printf("%s", "\\\"") } else if (chars[i] == "\\") { printf("%s", "\\\\") } else if (chars[i] == "\n") { printf("%s", "\\n") } else if (chars[i] == "\t") { printf("%s", "\\t") } else if (chars[i] == "\r") { printf("%s", "\\r") } else if (chars[i] == "\f") { printf("%s", "\\f") } else if (ord[chars[i]] >= 32 && ord[chars[i]] < 127) { printf("%s", chars[i]) } else { printf("\\x%02x", ord[chars[i]]) } } }' <<< "$unescaped")
-      tempFile="$(mktemp tmp.stdin.XXXXXXXXXX)"
-      tempFiles+=("$tempFile")
-      printf '\dv{SortString{}}(\"%s\")\n' "$stdinText" > "$tempFile"
     fi
-    configVars="$configVars -c STDIN $tempFile String korefile"
+    stdinFile="$(mktemp tmp.stdin.XXXXXXXXXX)"
+    tempFiles+=("$stdinFile")
+    printf '\dv{SortString{}}(\"%s\")\n' "$stdinText" > "$stdinFile"
+    configVars="$configVars -c STDIN $stdinFile String korefile"
   fi
   execute llvm-krun $configVars -d "$kompiledDir" $flags --dry-run -o "$input_file"
 fi
